@@ -1,0 +1,106 @@
+---
+title: "Trucking Optimization"
+author: "Peter Kurrell"
+date: '2022-03-29'
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(gganimate)
+library(ggplot2)
+```
+
+```{r}
+# We'll be looking at data from kaggle about how much fuel is consumed during shipping operations.
+fuel=(read.csv('fuel.csv'))
+fuel
+
+```
+
+```{r}
+#Let's run a linear regression to see which variables are significant.
+lm1=lm(Fuel~Payload+Season+Net+LoadValue+TransmissionType+Reliability, data=fuel)
+summary(lm1)
+```
+# Here we can see that all variables are significant except for transmission type and load value at a significance level of 0.05 so we can take them out of our linear regression model.
+
+```{r}
+# Let's look at a linear regression plot for all of the variables.
+pairs(Fuel ~ Payload + Season + Net + Reliability, data = fuel)
+# We are looking to optimize performance by reducing the amount of fuel that we use. Let's see which variable values lead to the best performance.
+```
+```{r}
+#Let's take a look at the proportion of trucking on different road conditions. It would make sense that trucking on bad conditions would lead to high fuel consumption. 
+ggplot(fuel, aes(x = Net, fill = Season)) +
+  geom_bar(position = "dodge") +
+  xlab("Road Conditions")
+```
+```{r}
+#Values of 1, 2, and 3 reflect poor, mediocre, and good road conditions respectively. WE can see that the bulk of trucking occurs on mediocre or good road conditions. # Now lets take a look at the proportion of trucking during either good or bad weather.
+```
+
+```{r}
+ggplot(fuel, aes(x = Season)) +
+  geom_bar(position = "dodge") +
+  xlab("Season")
+```
+# A distinct majority of the trucking occurs during good weather.
+# Let's see which variable has the largest impact on fuel consumption.
+```{r}
+lm2=lm(Fuel~Payload,data=fuel)
+summary(lm2)
+```
+```{r}
+lm3=lm(Fuel~Season,data=fuel)
+summary(lm3)
+```
+
+```{r}
+lm4=lm(Fuel~Net,data=fuel)
+summary(lm4)
+```
+```{r}
+lm5=lm(Fuel~Reliability,data=fuel)
+summary(lm5)
+plot(fuel$Reliability,fuel$Fuel)
+```
+
+
+# We can see that Road Conditions has the strongest effect on fuel consumption, it is correlated quite strongly at a multiple R^2 of 0.7323. The season has a low to moderate effect on fuel consumption and payload has little effect. Reliability has a moderate to high effect on fuel consumption, indicating that inefficent routes result in higher fuel consumption. The low effect of payload is likely caused by the fact that the average payload does not have a lot of variation. If the payload was significantly heavier this would result in higher fuel consumption but this is not something we have to worry about.
+
+# Now that we know which variables are significant let's work on optimizing our model. First we need to compute average fuel consumption to develop a point of reference.
+
+```{r}
+fuelavg=mean(fuel$Fuel)
+fuelavg
+```
+# The average mile per gallon is 16.5 across the entire data set. Let's see if we can improve upon that.
+
+```{r}
+lm(formula = Fuel ~ Season + Net + Reliability, data = fuel)
+```
+
+```{r}
+arrange(fuel, desc(Reliability))
+```
+# Reliability peaks at just a little over 90%. Given that we do not have control over all the factors affecting reliability, let's use the average for computing our optimization model.
+
+```{r}
+mean(fuel$Reliability)
+```
+```{r}
+optimum=(27.69-(.644*1)-(1.822*3)-(.099*70.18))
+optimum
+```
+```{r}
+1-(14.64/16.5)
+```
+# With all else being equal trucking under ideal conditions leads to an 11.1% reduction in fuel consumption and fuel costs. Given the current fuel price of $4.24 per gallon, this results in a savings of 46 cents per gallon.
+
+
+
+
+
+
+
